@@ -49,7 +49,7 @@ use strict;
 
 $| = 1;
 
-my $FieldWidth = 29;
+my $FieldWidth = 49;
 my $MessageLinesLimit = 500;
 my $MessagesLimit = 1000;
 my $UAsLimit = 20;
@@ -426,28 +426,28 @@ sub AddHost {
 	    $Host{'b2bua'} = {
 	        'IP' => $PortaSIP_IP,
 		'Order' => $#Keys+1,
-		'Description' => 'PortaSIP'};
+		'Description' => 'SIP b2bua'};
 	}
     } elsif ($HostParam{'Name'} eq 'ser') {
         if (!defined $Host{'ser'}) {
 	    $Host{'ser'} = {
 	        'IP' => $PortaSIP_IP,
 		'Order' => $#Keys+1,
-		'Description' => 'PortaSIP'};
+		'Description' => 'SIP b2bua'};
 	}
     } elsif ($HostParam{'Name'} eq 'asterisk') {
         if (!defined $Host{'asterisk'}) {
 	    $Host{'asterisk'} = {
 	        'IP' => $PortaSIP_IP,
 		'Order' => $#Keys+1,
-		'Description' => 'PortaSIP'};
+		'Description' => 'SIP b2bua'};
 	}
     } elsif ($HostParam{'Name'} eq 'AAA') {
         if (!defined $Host{'AAA'}) {
 	    $Host{'AAA'} = {
 	        'IP' => '',
 		'Order' => $#Keys+1,
-		'Description' => 'PortaBilling'};
+		'Description' => 'RADIUS'};
 	}
     } elsif ($HostParam{'Name'} ne $PortaSIP_IP) {
         if (!defined $Host{$HostParam{'Name'}}) {
@@ -485,8 +485,8 @@ sub AddLogEntry {
 #---------------------------------------------------------------------------------
 sub PrintDiagramHeader {
     if (defined $Mode_html) {
-        my $Flag = 0;    
-        print "diagram.document.write('<span class=\"background1\">PortaSIP </span>";
+        my $Flag = 0;   
+        print "diagram.document.write('<span class=\"background1\">                      </span>";
         foreach my $CurrentHost (sort {$Host{$a}{'Order'} <=> $Host{$b}{'Order'}} keys %Host) {
             printf ('<span class="background'.($Flag?1:2).'"> %-'.$FieldWidth.'.'.$FieldWidth.'s</span>', ($CurrentHost =~ /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/)?'UA':$CurrentHost);
 	    $Flag = !$Flag;
@@ -494,7 +494,7 @@ sub PrintDiagramHeader {
         print "\\n');\n";
 
         $Flag = 0;
-        print "diagram.document.write('<span class=\"background1\"> server  </span>";
+        print "diagram.document.write('<span class=\"background1\"> server               </span>";
         foreach my $CurrentHost (sort {$Host{$a}{'Order'} <=> $Host{$b}{'Order'}} keys %Host) {
             printf ('<span class="background'.($Flag?1:2).'"> %-'.$FieldWidth.'.'.$FieldWidth.'s</span>', defined $Host{$CurrentHost}{'IP'}?$Host{$CurrentHost}{'IP'}:'');
 	    $Flag = !$Flag;
@@ -502,7 +502,7 @@ sub PrintDiagramHeader {
         print "\\n');\n";
 
         $Flag = 0;
-        print "diagram.document.write('<span class=\"background1\">  time   </span>";
+        print "diagram.document.write('<span class=\"background1\">  time                </span>";
         foreach my $CurrentHost (sort {$Host{$a}{'Order'} <=> $Host{$b}{'Order'}} keys %Host) {
             printf ('<span class="background'.($Flag?1:2).'"> %-'.$FieldWidth.'.'.$FieldWidth.'s</span>', $Host{$CurrentHost}{'Description'});
 	    $Flag = !$Flag;
@@ -583,11 +583,14 @@ EOF
 
 while (<STDIN>) {
     s/^([^\r]*)\r?$/$1/; # cut trailing '\r'
-    
-    if (/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/($Call_ID)\/([^:[]+)[:[]/ or 
-		/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/(GLOBAL)\/([^:[]+)(?:\[[0-9]+\])?:.*[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]($Call_ID)[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]*/) { # is there a call-id marked record?
-        my $Time = $2;
-	my $LocalComponent = $4;
+ 
+     if (/(^[^\/]+)\/($Call_ID)\/([a-z]+):/  or /^(.*)[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]($Call_ID)[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]*/ ) { # is there a call-id marked record?
+
+#     if (/(^[^\/]+)\/($Call_ID)\/([a-z]+):/ or /^.*[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]($Call_ID)[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]*/) { # is there a call-id marked record?
+#    if (/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/($Call_ID)\/([^:[]+)[:[]/ or 
+#		/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/(GLOBAL)\/([^:[]+)(?:\[[0-9]+\])?:.*[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]($Call_ID)[^a-zA-Z0-9.!%*_+`'~(){}?<>\-]*/) { # is there a call-id marked record?
+        my $Time = $1;
+	my $LocalComponent = $3;
 	
 	my $MessagePrefix = '';
         my $Message = $_;
@@ -769,11 +772,12 @@ while (<STDIN>) {
            print "log.document.write('$MessagePrefix".String2JS($Message)."');\n";
         }
     # is there following message has been sent/received
-    } elsif (/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/GLOBAL\/([^:[]+)(?:\[[0-9]+\])?: (SENT message to|SENDING message to|RECEIVED message from) ([.0-9]+):([0-9]+):$/) {
-        my $Time = $2;
-	my $LocalComponent = $3;
-	my $RemoteIP = $5;
-	my $RemotePort = $6;
+    } elsif (/^([^\/]+)\/GLOBAL\/(.*)(SENT message to|SENDING message to|RECEIVED message from) ([.0-9]+):([0-9]+):$/) {
+#    } elsif (/^([^ ]+ [^ ]+) ([0-9][0-9]:[0-9][0-9]:[0-9][0-9])\/GLOBAL\/([^:[]+)(?:\[[0-9]+\])?: (SENT message to|SENDING message to|RECEIVED message from) ([.0-9]+):([0-9]+):$/) {
+        my $Time = $1;
+	my $LocalComponent = $2;
+	my $RemoteIP = $4;
+	my $RemotePort = $5;
 	my $RemoteComponent = ($RemoteIP eq $PortaSIP_IP and $RemotePort eq '5060')?'ser':(($RemoteIP eq $PortaSIP_IP and $RemotePort eq '5061')?'b2bua':(($RemoteIP eq $PortaSIP_IP and $RemotePort eq '5062')?'asterisk':''));
 	
 	if (!defined $Date) {
@@ -803,7 +807,7 @@ while (<STDIN>) {
 	if (/: SENDING message to|: SENT message to/) {
 	    $FromHostName = $LocalComponent;
 	    $ToHostName = $RemoteComponent?$RemoteComponent:$RemoteIP;
-	    if ($FromHostName eq 'ser' and $ToHostName eq 'b2bua' or $FromHostName eq 'b2bua' and $ToHostName eq 'ser' or $FromHostName eq $ToHostName) {$DupMessage = 1;}
+#	    if ($FromHostName eq 'ser' and $ToHostName eq 'b2bua' or $FromHostName eq 'b2bua' and $ToHostName eq 'ser' or $FromHostName eq $ToHostName) {$DupMessage = 1;}
 	} else {
 	    $FromHostName = $RemoteComponent?$RemoteComponent:$RemoteIP;
 	    $ToHostName = $LocalComponent;
@@ -820,7 +824,7 @@ while (<STDIN>) {
 		$IsFirstLine = 0;
 	    }
 	    
-            if (/^Call-ID: *($Call_ID)$/) { # is the message with our Call-ID?
+            if (/^Call-ID: *($Call_ID)/) { # is the message with our Call-ID?
 		$MsgCallID = $1;
                 $Call_ID_was_found = 1;
 	
@@ -986,7 +990,7 @@ diagram.document.write('    .common      {color: black;\\n');
 diagram.document.write('      background-color: #eaeaea;}\\n');
 diagram.document.write('/--></style>\\n');
 
-diagram.document.write('<body>\\n<pre> siplogview version: $_Version\\n\\n PortaSIP node: $PortaSIP_IP\\n Call-ID:       $Call_ID\\n H323-Conf-ID:  $H323_Conf_ID</pre>\\n<table border="0" cellspacing="1" cellpadding="2" bgcolor="black"><tr><td bgcolor="white"><table border="0" cellspacing="0" cellpadding="0"><tr><td><pre class="diagram">');
+diagram.document.write('<body>\\n<pre> siplogview version: $_Version\\n\\n      SIP node: $PortaSIP_IP\\n Call-ID:       $Call_ID\\n H323-Conf-ID:  $H323_Conf_ID</pre>\\n<table border="0" cellspacing="1" cellpadding="2" bgcolor="black"><tr><td bgcolor="white"><table border="0" cellspacing="0" cellpadding="0"><tr><td><pre class="diagram">');
 
 EOF
     if ($#LogEntry < 0) {
@@ -1009,7 +1013,7 @@ EOF
         exit;
     }
 } else {
-    print " siplogview version: $_Version\n\n PortaSIP node: $PortaSIP_IP\n Call-ID:       $Call_ID\n H323-Conf-ID:  $H323_Conf_ID\n\n";
+    print " siplogview version: $_Version\n\n      SIP node: $PortaSIP_IP\n Call-ID:       $Call_ID\n H323-Conf-ID:  $H323_Conf_ID\n\n";
 
     if ($#LogEntry < 0) {
         print "No messages found for the Call-ID in the log file.";
